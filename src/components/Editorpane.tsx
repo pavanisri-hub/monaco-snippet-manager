@@ -20,7 +20,27 @@ function getFileExtension(lang: string): string {
 }
 
 function safeFileName(title: string): string {
-  return title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'snippet';
+  return (
+    title
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'snippet'
+  );
+}
+
+function downloadSnippetsAsJson(snippets: unknown[]) {
+  const data = JSON.stringify(snippets, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+
+  a.href = url;
+  a.download = `snippets-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function EditorPane() {
@@ -74,6 +94,11 @@ function EditorPane() {
     }
   };
 
+  const handleBackup = () => {
+    if (!snippets || snippets.length === 0) return;
+    downloadSnippetsAsJson(snippets);
+  };
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800">
@@ -83,7 +108,9 @@ function EditorPane() {
           </span>
           <span className="text-xs text-slate-500">
             {selectedSnippet
-              ? `${selectedSnippet.language} · ${selectedSnippet.tags.join(', ') || 'no tags'}`
+              ? `${selectedSnippet.language} · ${
+                  selectedSnippet.tags.join(', ') || 'no tags'
+                }`
               : 'Choose a snippet from the left or create a new one.'}
           </span>
         </div>
@@ -105,6 +132,7 @@ function EditorPane() {
           </button>
           <button
             data-testid="backup-button"
+            onClick={handleBackup}
             className="h-8 px-3 rounded-md border border-slate-700 text-xs text-slate-300 hover:bg-slate-800 transition"
           >
             Backup
